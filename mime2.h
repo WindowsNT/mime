@@ -19,8 +19,9 @@
 #pragma comment(lib,".\\AdES\\ades32r.lib")
 #endif
 #endif
-#endif
 
+
+#endif
 
 namespace MIME2
 	{
@@ -658,7 +659,7 @@ namespace MIME2
 
 
 			// Encryption/Decryption
-#ifdef MIME_CMS
+#ifdef MIME_ADES
 			inline MIMEERR Encrypt(CONTENT& c, std::vector<PCCERT_CONTEXT> certs, bool BinaryOutput = false)
 			{
 				auto C = SerializeToVector();
@@ -748,16 +749,26 @@ namespace MIME2
 			}
 
 			// Signing using AdES Library...
-			MIMEERR Sign(CONTENT& co, std::vector<PCCERT_CONTEXT> certs, std::vector<PCCERT_CONTEXT> addcerts, const wchar_t* TimeStampServer = 0, bool Attached = true, bool BinaryOutput = false)
+			MIMEERR Sign(CONTENT& co, std::vector<PCCERT_CONTEXT> certs, const wchar_t* TimeStampServer = 0, bool Attached = true, bool BinaryOutput = false)
 			{
 				MIMEERR err = MIMEERR::NOTSIGNED;
+				vector<AdES::CERT> certs2;
+				for (auto& c : certs)
+				{
+					AdES::CERT ce;
+					ce.cert.cert = c;
+					certs2.push_back(ce);
+				}
 				auto C = SerializeToVector();
 				vector<char> Signature;
 				AdES a;
 				AdES::SIGNPARAMETERS Pars;
-				Pars.Attached = Attached;
+				Pars.Attached = Attached ? AdES::ATTACHTYPE::ATTACHED : AdES::ATTACHTYPE::DETACHED;
 				Pars.TSServer = TimeStampServer;
-				auto hr = a.Sign(TimeStampServer ? AdES::CLEVEL::CADES_T : AdES::CLEVEL::CADES_B, C.data(), (DWORD)C.size(), certs, addcerts, Pars, Signature);
+		//		auto c0 = C[0];
+		//		C[0] = 0;
+				auto hr = a.Sign(TimeStampServer ? AdES::LEVEL::T : AdES::LEVEL::B, C.data(), (DWORD)C.size(), certs2, Pars, Signature);
+		//		C[0] = c0;
 				if (FAILED(hr))
 					return err;
 
@@ -806,7 +817,7 @@ namespace MIME2
 				}
 			}
 
-			inline MIMEERR Verify(vector<PCCERT_CONTEXT>* Certs = 0, AdES::CLEVEL* plev = 0)
+			inline MIMEERR Verify(vector<PCCERT_CONTEXT>* Certs = 0, AdES::LEVEL* plev = 0)
 			{
 				auto axx = hval("Content-Type", "multipart/signed");
 				if (axx.length() == 0)
@@ -830,7 +841,7 @@ namespace MIME2
 							return MIMEERR::INVALID;
 
 					AdES a;
-					AdES::CLEVEL lev;
+					AdES::LEVEL lev;
 					auto hr = a.Verify(data2.data(), (DWORD)data2.size(), lev, 0, 0, 0, Certs, 0);
 					if (FAILED(hr))
 						return MIMEERR::NOTSIGNED;
@@ -878,7 +889,7 @@ namespace MIME2
 				// Sig = message
 				// cert = Signature;
 				AdES a;
-				AdES::CLEVEL lev;
+				AdES::LEVEL lev;
 				auto hr = a.Verify(cert.data(), (DWORD)cert.size(), lev,Sig.data(), (DWORD)Sig.size(),0,Certs,0);
 				if (FAILED(hr))
 					return MIMEERR::NOTSIGNED;
@@ -928,6 +939,8 @@ namespace MIME2
 				auto h1 = c.SerializeToVector();
 				parts.push_back(h1);
 				}
+
+			vector<vector<char>>& GetParts() { return parts; }
 
 			void Build(CONTENT& c,const char* Sign = 0)
 				{

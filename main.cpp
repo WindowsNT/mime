@@ -10,7 +10,7 @@ name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 #include <windows.h>
- // #define MIME_ADES
+//#define MIME_ADES
 #include "mime2.h"
 #pragma comment (lib,"crypt32.lib")
 
