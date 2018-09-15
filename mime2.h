@@ -5,7 +5,7 @@
 
 //#pragma comment(lib,"f:\\tools\\ades\\ades.lib")
 
-
+/*
 #ifdef _DEBUG
 #ifdef _WIN64
 #pragma comment(lib,".\\AdES\\ades64d.lib")
@@ -19,7 +19,7 @@
 #pragma comment(lib,".\\AdES\\ades32r.lib")
 #endif
 #endif
-
+*/
 
 #endif
 
