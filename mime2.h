@@ -749,7 +749,7 @@ namespace MIME2
 			}
 
 			// Signing using AdES Library...
-			MIMEERR Sign(CONTENT& co, std::vector<PCCERT_CONTEXT> certs, const wchar_t* TimeStampServer = 0, bool Attached = true, bool BinaryOutput = false)
+			MIMEERR Sign(CONTENT& co,AdES::LEVEL lev, std::vector<PCCERT_CONTEXT> certs, AdES::SIGNPARAMETERS* sp = 0, bool BinaryOutput = false)
 			{
 				MIMEERR err = MIMEERR::NOTSIGNED;
 				vector<AdES::CERT> certs2;
@@ -763,16 +763,14 @@ namespace MIME2
 				vector<char> Signature;
 				AdES a;
 				AdES::SIGNPARAMETERS Pars;
-				Pars.Attached = Attached ? AdES::ATTACHTYPE::ATTACHED : AdES::ATTACHTYPE::DETACHED;
-				Pars.TSServer = TimeStampServer;
-		//		auto c0 = C[0];
-		//		C[0] = 0;
-				auto hr = a.Sign(TimeStampServer ? AdES::LEVEL::T : AdES::LEVEL::B, C.data(), (DWORD)C.size(), certs2, Pars, Signature);
-		//		C[0] = c0;
+				if (sp)
+					Pars = *sp;
+				
+				auto hr = a.Sign(lev,C.data(), (DWORD)C.size(), certs2, Pars, Signature);
 				if (FAILED(hr))
 					return err;
 
-				if (Attached)
+				if (Pars.Attached == AdES::ATTACHTYPE::ATTACHED)
 				{
 					co.headers.clear();
 					co["Content-Type"] = "application/pkcs7-mime; smime-type=signed-data; name=\"smime.p7m\"";
@@ -897,6 +895,60 @@ namespace MIME2
 					*plev = lev;
 				return MIMEERR::OK;
 			}
+
+
+			// Whops. Not standard, but I like experimental stuff.
+			MIMEERR XMLSign(CONTENT& co, AdES::LEVEL lev, std::vector<PCCERT_CONTEXT> certs, AdES::SIGNPARAMETERS* sp = 0)
+			{
+				MIMEERR err = MIMEERR::NOTSIGNED;
+				vector<AdES::CERT> certs2;
+				for (auto& c : certs)
+				{
+					AdES::CERT ce;
+					ce.cert.cert = c;
+					certs2.push_back(ce);
+				}
+				auto C = SerializeToVector();
+				vector<char> Signature;
+				AdES a;
+				AdES::SIGNPARAMETERS Pars;
+				if (sp)
+					Pars = *sp;
+
+				if (certs.size() > 1 && Pars.Attached == AdES::ATTACHTYPE::ENVELOPED)
+					Pars.Attached == AdES::ATTACHTYPE::ENVELOPING;
+				
+
+				std::vector<std::tuple<const BYTE*, DWORD, const char*>> d;
+				std::tuple<const BYTE*, DWORD, const char*> tu = make_tuple<const BYTE*, DWORD, const char*>(0,0,0);
+				std::get<0>(tu) = (const BYTE*)data.data();
+				std::get<1>(tu) = (DWORD)data.size();
+				std::get<2>(tu) = (const char*)("ref1");
+				auto hr = a.XMLSign(lev, d, certs2, Pars, Signature);
+				if (FAILED(hr))
+					return err;
+
+				if (Pars.Attached == AdES::ATTACHTYPE::ATTACHED)
+				{
+					co.headers.clear();
+					co["Content-Type"] = "text/xml; smime-type=signed-data; name=\"smime.xml\"";
+					co["Content-Transfer-Encoding"] = "base64";
+					co["Content-Disposition"] = "attachment; filename=\"smime.xml\"";
+
+					co.SetData(Char2Base64(Signature.data(), Signature.size()).c_str());
+				}
+				else
+				{
+					CONTENT ct;
+					ct["Content-Type"] = "text/xml; name=\"smime.xml\"";
+					ct["Content-Transfer-Encoding"] = "base64";
+
+					ct["Content-Disposition"] = "attachment; filename=\"smime.xml\"";
+					ct.SetData(Char2Base64(Signature.data(), Signature.size()).c_str());
+					BuildZ(*this, ct, co, "multipart/signed; protocol=\"text/xml\"; micalg=\"sha256\"");
+				}
+			}
+
 	#endif		
 
 
