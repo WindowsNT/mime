@@ -813,6 +813,7 @@ namespace MIME2
 						ct.SetData(Char2Base64(Signature.data(), Signature.size()).c_str());
 					BuildZ(*this, ct, co, "multipart/signed; protocol=\"application/x-pkcs7-signature\"; micalg=\"sha256\"");
 				}
+				return MIMEERR::OK;
 			}
 
 			inline MIMEERR Verify(vector<PCCERT_CONTEXT>* Certs = 0, AdES::LEVEL* plev = 0)
@@ -947,6 +948,7 @@ namespace MIME2
 					ct.SetData(Char2Base64(Signature.data(), Signature.size()).c_str());
 					BuildZ(*this, ct, co, "multipart/signed; protocol=\"text/xml\"; micalg=\"sha256\"");
 				}
+				return MIMEERR::OK;
 			}
 
 	#endif		
