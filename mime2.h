@@ -749,16 +749,16 @@ namespace MIME2
 			}
 
 			// Signing using AdES Library...
-			MIMEERR Sign(CONTENT& co,AdES::LEVEL lev, std::vector<PCCERT_CONTEXT> certs, AdES::SIGNPARAMETERS* sp = 0, bool BinaryOutput = false)
+			MIMEERR Sign(CONTENT& co,AdES::LEVEL lev, vector<AdES::CERT> certs2, AdES::SIGNPARAMETERS* sp = 0, bool BinaryOutput = false)
 			{
 				MIMEERR err = MIMEERR::NOTSIGNED;
-				vector<AdES::CERT> certs2;
+				/*vector<AdES::CERT> certs2;
 				for (auto& c : certs)
 				{
 					AdES::CERT ce;
 					ce.cert.cert = c;
 					certs2.push_back(ce);
-				}
+				}*/
 				auto C = SerializeToVector();
 				vector<char> Signature;
 				AdES a;
@@ -898,16 +898,16 @@ namespace MIME2
 
 
 			// Whops. Not standard, but I like experimental stuff.
-			MIMEERR XMLSign(CONTENT& co, AdES::LEVEL lev, std::vector<PCCERT_CONTEXT> certs, AdES::SIGNPARAMETERS* sp = 0)
+			MIMEERR XMLSign(CONTENT& co, AdES::LEVEL lev, vector<AdES::CERT> certs2, AdES::SIGNPARAMETERS* sp = 0)
 			{
 				MIMEERR err = MIMEERR::NOTSIGNED;
-				vector<AdES::CERT> certs2;
+				/*vector<AdES::CERT> certs2;
 				for (auto& c : certs)
 				{
 					AdES::CERT ce;
 					ce.cert.cert = c;
 					certs2.push_back(ce);
-				}
+				}*/
 				auto C = SerializeToVector();
 				vector<char> Signature;
 				AdES a;
@@ -916,7 +916,7 @@ namespace MIME2
 					Pars = *sp;
 
 				if (certs.size() > 1 && Pars.Attached == AdES::ATTACHTYPE::ENVELOPED)
-					Pars.Attached == AdES::ATTACHTYPE::ENVELOPING;
+					Pars.Attached = AdES::ATTACHTYPE::ENVELOPING;
 				
 
 				std::vector<std::tuple<const BYTE*, DWORD, const char*>> d;
