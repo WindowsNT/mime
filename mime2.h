@@ -915,7 +915,7 @@ namespace MIME2
 				if (sp)
 					Pars = *sp;
 
-				if (certs.size() > 1 && Pars.Attached == AdES::ATTACHTYPE::ENVELOPED)
+				if (certs2.size() > 1 && Pars.Attached == AdES::ATTACHTYPE::ENVELOPED)
 					Pars.Attached = AdES::ATTACHTYPE::ENVELOPING;
 				
 
